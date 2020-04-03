@@ -1,83 +1,119 @@
 import numpy as np
-import seal
+import os
 from seal import Ciphertext, \
     Decryptor, \
     Encryptor, \
-    EncryptionParameters, \
     Evaluator, \
     IntegerEncoder, \
     KeyGenerator, \
     Plaintext, \
+    scheme_type, \
+    EncryptionParameters, \
+    CoeffModulus, \
     SEALContext
 
 
 class Client(object):
 
-    def __init__(self, poly=2048, coeff=seal.CoeffModulus.BFVDefault(2048), plain=(1 << 8)):
-        encoder, encryptor, decryptor, evaluator = self._generate_params(poly, coeff, plain)
-        self._encoder = encoder
-        self._encryptor = encryptor
-        self._decryptor = decryptor
-        self._evaluator = evaluator
+    def __init__(self, print_parms=False, **parms_dict):
+        # default parameters
+        self._parms_dict = {"poly": 2048, "coeff": 2048, "plain": (1 << 8)}
+        self._parms = EncryptionParameters(scheme_type.BFV)
+        self._context = None
+        self._public_key = None
+        self._secret_key = None
+        self._encoder = None
+        self._encryptor = None
+        self._decryptor = None
+        self._evaluator = None
 
-    def enc(self, arr_p):
-        ctext = []
-        for p in arr_p:
+        if parms_dict:
+            self.set_parms(**parms_dict)
+        else:
+            self.set_parms(**self._parms_dict)
+
+    def get_parms(self):
+        return self._parms
+
+    def set_parms(self, **parms):
+        for key, value in parms.items():
+            assert key in parms, "Accepted parameters are poly, coeff and plain"
+            self._parms_dict[key] = parms[key]
+
+        self._parms.set_poly_modulus_degree(self._parms_dict['poly'])
+        self._parms.set_coeff_modulus(CoeffModulus.BFVDefault(self._parms_dict['coeff']))
+        self._parms.set_plain_modulus(self._parms_dict['plain'])
+
+        self._context = SEALContext.Create(self._parms)
+        keygen = KeyGenerator(self._context)
+        self._public_key = keygen.public_key()
+        self._secret_key = keygen.secret_key()
+        self._encoder = IntegerEncoder(self._context)
+        self._encryptor = Encryptor(self._context, self._public_key)
+        self._decryptor = Decryptor(self._context, self._secret_key)
+        self._evaluator = Evaluator(self._context)
+
+    def get_public_key(self):
+        return self._public_key
+
+    def get_secret_key(self):
+        return self._secret_key
+
+    def enc(self, arr):
+        n = len(arr)
+        cipher_arr = np.empty(n, Ciphertext)
+        for i in range(n):
             c = Ciphertext()
-            self._encryptor.encrypt(self._encoder.encode(p), c)
-            ctext.append(c)
-        return ctext
+            self._encryptor.encrypt(self._encoder.encode(arr[i]), c)
+            cipher_arr[i] = c
+        return cipher_arr
 
-    def dec(self, arr_c):
-        ptext = []
-        for c in arr_c:
+    def dec(self, cipher_arr):
+        n = len(cipher_arr)
+        arr = np.empty(n, Plaintext)
+        for i in range(n):
             p = Plaintext()
-            self._decryptor.decrypt(c, p)
-            ptext.append(self._encoder.decode_int32(p))
-        return ptext
+            self._decryptor.decrypt(cipher_arr[i], p)
+            arr[i] = self._encoder.decode_int64(p)
+        return arr
 
-    def mask_is_left(self, arr_p):
-        arr_p = np.array(arr_p)
-        return np.sign(arr_p)
+    @staticmethod
+    def mask_wth_sign(arr):
+        assert isinstance(arr, np.ndarray), "Only numpy arrays are accepted"
+        return np.sign(arr)
 
-    @property
-    def encoder(self):
-        return self._encoder
+    @staticmethod
+    def save_array(arr, size_file, binary_file):
+        assert isinstance(arr[0], object)  # must be Plaintext or Ciphertext arrays
+        n = len(arr)
+        size_array = np.empty(n, int)
+        with open(binary_file, 'wb') as fp:
+            for i in range(n):
+                arr[i].save('tmp_file')
+                with open('tmp_file', 'rb') as f:
+                    element = f.read()
+                    size_array[i] = len(element)
+                fp.write(element)
+        if not size_file.endswith('.npy'):
+            size_file += '.npy'
+        np.save(size_file, size_array)
+        os.remove('tmp_file')
+        print("Array saved to file: %s\n Corresponding size array saved to file: %s"
+              % (binary_file, size_file))
 
-    @property
-    def evaluator(self):
-        return self._evaluator
-
-    def _generate_params(self, poly, coeff, plain):
-        # Encryption decryption setup
-        parms = EncryptionParameters(seal.scheme_type.BFV)
-        parms.set_poly_modulus_degree(poly)
-        parms.set_coeff_modulus(coeff)
-        parms.set_plain_modulus(plain)
-
-        context = SEALContext.Create(parms)
-        # self._print_parameters(context)
-
-        # IntegerEncoder with base b=2, representing integers as polynomials of base b.
-        # e.g. 26 = 2^4 + 2^3 + 2^1
-        encoder = IntegerEncoder(context)
-
-        keygen = KeyGenerator(context)
-        public_key = keygen.public_key()
-        secret_key = keygen.secret_key()
-
-        encryptor = Encryptor(context, public_key)
-        evaluator = Evaluator(context)
-        decryptor = Decryptor(context, secret_key)
-        return encoder, encryptor, decryptor, evaluator
-
-    def _print_parameters(self, context):
-        print("/ Encryption parameters:")
-        print("| poly_modulus: " + context.poly_modulus().to_string())
-
-        # Print the size of the true (product) coefficient modulus
-        print("| coeff_modulus_size: " + (str)(context.total_coeff_modulus().significant_bit_count()) + " bits")
-
-        print("| plain_modulus: " + (str)(context.plain_modulus().value()))
-        print("| noise_standard_deviation: " + (str)(context.noise_standard_deviation()))
+    @staticmethod
+    def load_array(context: SEALContext, size_file, binary_file):
+        size_array = np.load(size_file)
+        n = len(size_array)
+        arr = np.empty(n, object)
+        with open(binary_file, 'rb') as fp:
+            for i in range(n):
+                c = Ciphertext()
+                element = fp.read(size_array[i])
+                with open('tmp_file', 'wb') as f:
+                    f.write(element)
+                c.load(context, 'tmp_file')
+                arr[i] = c
+        os.remove('tmp_file')
+        return arr
 

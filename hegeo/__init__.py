@@ -1,3 +1,3 @@
 from .client import Client
 from .server import Server
-from .utils import wn_array
+from .utils_computation import wn_point_in_poly

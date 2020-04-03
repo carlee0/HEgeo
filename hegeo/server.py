@@ -1,15 +1,18 @@
 import numpy as np
-import copy
+from seal import Evaluator, IntegerEncoder, Ciphertext, \
+    EncryptionParameters, SEALContext
 
-from seal import Plaintext
+from .utils_computation import compute_wn
 
 
 class Server(object):
 
-    def __init__(self, fence=None, encoder=None, evaluator=None):
-        self._fence = fence
-        # self._encoder = encoder
-        self._evaluator = evaluator
+    def __init__(self):
+        self._fence = None
+        self._parms = None
+        self._context = None
+        self._encoder = None
+        self._evaluator = None
 
     @property
     def fence(self):
@@ -19,72 +22,57 @@ class Server(object):
     def fence(self, fence):
         self._fence = fence
 
-    # @property
-    # def encoder(self):
-    #     return self._encoder
-    #
-    # @encoder.setter
-    # def encoder(self, encoder):
-    #     self._encoder = encoder  # probably not neccessary
+    # noinspection PyCallByClass
+    def set_parms(self, parms: EncryptionParameters):
+        self._parms = parms
+        self._context = SEALContext.Create(self._parms)
+        self._encoder = IntegerEncoder(self._context)
+        self._evaluator = Evaluator(self._context)
 
-    @property
-    def evaluator(self):
-        return self._evaluator
-
-    @evaluator.setter
-    def evaluator(self, evaluator):
-        self._evaluator = evaluator
-
-    def compute_intermediate(self, point):
-        y, x = point
+    def compute_intermediate(self, cipher_point):
+        assert self.fence is not None, "Geo fence not set"
+        assert self._context is not None, "Parameters not set"
+        y, x = cipher_point
         vertices = self.fence
         num = len(vertices)
 
         latitudes = np.array([vertices[i][0] for i in range(num)])
         longitudes = np.array([vertices[i][1] for i in range(num)])
 
-        self.evaluator.negate_inplace(x)
-        self.evaluator.negate_inplace(y)
+        # Compute dx, dy
+        dx = np.empty(num, Ciphertext)
+        dy = np.empty(num, Ciphertext)
 
-        # Compute delta and delta_next
-        dx = []
-        dy = []
+        for i in range(num):
+            c = Ciphertext()
+            self._evaluator.sub_plain(x, self._encoder.encode(longitudes[i]), c)
+            dx[i] = c
 
-        for i in range(len(vertices)):
-            x_copy = copy.deepcopy(x)
-            self._evaluator.add_plain(x_copy, self._encoder.encode(longitudes[i]))
-            # lon_p = Plaintext(str(longitudes[i]))
-            # self._evaluator.add_plain(x_copy, lon_p, x_copy)
-            dx.append(x_copy)
+        for i in range(num):
+            c = Ciphertext()
+            self._evaluator.sub_plain(y, self._encoder.encode(latitudes[i]), c)
+            dy[i] = c
 
-        # TODO: Add support for signed integer
-        for i in range(len(vertices)):
-            y_copy = copy.deepcopy(y)
-            self._evaluator.add_plain(y_copy, self._encoder.encode(latitudes[i]))
-            # lat_p = Plaintext(str(latitudes[i]))
-            # self._evaluator.add_plain(y_copy, lat_p, y_copy)
-            dy.append(y_copy)
+        # Compute is_left = dx[i]*dy[j] - dx[j]*dy[i]
+        # >0 left, wn++ if direction up
+        # =0 line, wn does not change
+        # <0 right, wn-- if direction down
+        is_left = np.empty(num, Ciphertext)
+        for i in range(num):
+            j = (i + 1) % num
+            c1 = Ciphertext()
+            c2 = Ciphertext()
+            self._evaluator.multiply(dx[i], dy[j], c1)
+            self._evaluator.multiply(dx[j], dy[i], c2)
+            self._evaluator.sub_inplace(c1, c2)
+            is_left[i] = c1
 
-        dx = np.array(dx)
-        dy = np.array(dy)
+        return is_left, dy
 
-        # Compute is_left, value stored at delta_x
-        dx_next = np.roll(copy.deepcopy(dx), -1)
-        dy_next = np.roll(copy.deepcopy(dy), -1)
+    @staticmethod
+    def masking(self, cipher_array):
+        pass
 
-        for i in range(len(vertices)):
-            self._evaluator.multiply_inplace(dx[i], dy_next[i])
-            self._evaluator.multiply_inplace(dx_next[i], dy[i])
-            self._evaluator.negate_inplace(dx_next[i])
-            self._evaluator.add_inplace(dx[i], dx_next[i])
-
-        return dx, dy
-
-    def compute_wn(self, is_left_p, dy_p):
-        dy_p_next = np.roll(dy_p, -1)
-        clockwise = (dy_p <= 0) * (dy_p_next > 0) * is_left_p
-        countercl = (dy_p > 0) * (dy_p_next <= 0) * is_left_p
-
-        wn = np.sum(clockwise) + np.sum(countercl)
-        print("The winding number is: " + str(wn))
-        return (wn != 0)
+    @staticmethod
+    def compute_winding_number(self):
+        pass
