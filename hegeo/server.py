@@ -1,18 +1,14 @@
 import numpy as np
-from seal import Evaluator, IntegerEncoder, Ciphertext, \
-    EncryptionParameters, SEALContext
+from seal import Ciphertext
 
-from .utils_computation import compute_wn
+from .participant import Participant
 
 
-class Server(object):
+class Server(Participant):
 
     def __init__(self):
+        super().__init__()
         self._fence = None
-        self._parms = None
-        self._context = None
-        self._encoder = None
-        self._evaluator = None
 
     @property
     def fence(self):
@@ -22,12 +18,11 @@ class Server(object):
     def fence(self, fence):
         self._fence = fence
 
-    # noinspection PyCallByClass
-    def set_parms(self, parms: EncryptionParameters):
-        self._parms = parms
-        self._context = SEALContext.Create(self._parms)
-        self._encoder = IntegerEncoder(self._context)
-        self._evaluator = Evaluator(self._context)
+    def get_parms(self):
+        return self._parms
+
+    def load_parms(self, path: str, print_parms=False):
+        super().load_parms(path, print_parms)
 
     def compute_intermediate(self, cipher_point):
         assert self.fence is not None, "Geo fence not set"
@@ -69,10 +64,20 @@ class Server(object):
 
         return is_left, dy
 
-    @staticmethod
-    def masking(self, cipher_array):
+    # TODO: Add masking
+    def masking(self, cipher_arr):
         pass
 
+    def detect_inclusion(self, is_left_p, dy_p):
+        wn = self.compute_wn(is_left_p, dy_p)
+        return wn != 0
+
+    # noinspection DuplicatedCode
     @staticmethod
-    def compute_winding_number(self):
-        pass
+    def compute_wn(is_left_p, dy_p):
+        dy_p_next = np.roll(dy_p, -1)
+        clockwise = (dy_p <= 0) * (dy_p_next > 0) * is_left_p
+        countercl = (dy_p > 0) * (dy_p_next <= 0) * is_left_p
+
+        wn = np.sum(clockwise) + np.sum(countercl)
+        return wn
