@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import pickle
 from abc import ABC, abstractmethod
 from seal import EncryptionParameters, \
     SEALContext, \
@@ -41,8 +42,7 @@ class Participant(ABC):
     def masking(self, arr):
         pass
 
-    @staticmethod
-    def save_cipher_array(arr, size_file, binary_file):
+    def save_cipher_array(self, arr, size_file, binary_file):
         assert isinstance(arr[0], object)  # must be Plaintext or Ciphertext arrays
         n = len(arr)
         size_array = np.empty(n, int)
@@ -53,15 +53,20 @@ class Participant(ABC):
                     element = f.read()
                     size_array[i] = len(element)
                 fp.write(element)
-        if not size_file.endswith('.npy'):
-            size_file += '.npy'
-        np.save(size_file, size_array)
+        # TODO: change np.save to using pickle instead
+        # if not size_file.endswith('.npy'):
+        #     size_file += '.npy'
+        # np.save(size_file, size_array)
+        # pickle.dump(size_array, open(size_file, "wb"))
+        self.save_array(size_array, size_file)
         os.remove('tmp_file')
         print("Array saved to file: %s\nCorresponding size array saved to file: %s"
               % (binary_file, size_file))
 
     def load_cipher_array(self, size_file, binary_file):
-        size_array = np.load(size_file)
+        # size_array = np.load(size_file)
+        # size_array = pickle.load(open(size_file, "rb"))
+        size_array = self.load_array(size_file)
         n = len(size_array)
         arr = np.empty(n, object)
         with open(binary_file, 'rb') as fp:
@@ -74,6 +79,24 @@ class Participant(ABC):
                 arr[i] = c
         os.remove('tmp_file')
         return arr
+
+    @staticmethod
+    def save_array(arr, file_path):
+        """
+        Pickles the numpy array and save to file
+        :param arr: numpy array
+        :param file_path: path to the binary file
+        """
+        pickle.dump(arr, open(file_path, "wb"))
+
+    @staticmethod
+    def load_array(file_path):
+        """
+        Pickle load the binary file to numpy array
+        :param file_path: path to the binary file
+        :return: numpy array
+        """
+        return pickle.load(open(file_path, "rb"))
 
     @staticmethod
     def print_parameters(context):
