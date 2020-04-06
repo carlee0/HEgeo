@@ -53,19 +53,12 @@ class Participant(ABC):
                     element = f.read()
                     size_array[i] = len(element)
                 fp.write(element)
-        # TODO: change np.save to using pickle instead
-        # if not size_file.endswith('.npy'):
-        #     size_file += '.npy'
-        # np.save(size_file, size_array)
-        # pickle.dump(size_array, open(size_file, "wb"))
         self.save_array(size_array, size_file)
         os.remove('tmp_file')
         print("Array saved to file: %s\nCorresponding size array saved to file: %s"
               % (binary_file, size_file))
 
     def load_cipher_array(self, size_file, binary_file):
-        # size_array = np.load(size_file)
-        # size_array = pickle.load(open(size_file, "rb"))
         size_array = self.load_array(size_file)
         n = len(size_array)
         arr = np.empty(n, object)
