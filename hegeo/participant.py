@@ -36,7 +36,7 @@ class Participant(ABC):
         self._parms.load(path)
         self._set_parms(self._parms, print_parms)
         if print_parms:
-            self.print_parameters(self._context)
+            self.print_parameters()
 
     @abstractmethod
     def masking(self, arr):
@@ -80,7 +80,8 @@ class Participant(ABC):
         :param arr: numpy array
         :param file_path: path to the binary file
         """
-        pickle.dump(arr, open(file_path, "wb"))
+        with open(file_path, 'wb') as f:
+            pickle.dump(arr, f)
 
     @staticmethod
     def load_array(file_path):
@@ -89,10 +90,12 @@ class Participant(ABC):
         :param file_path: path to the binary file
         :return: numpy array
         """
-        return pickle.load(open(file_path, "rb"))
+        with open(file_path, "rb") as f:
+            arr = pickle.load(f)
+        return arr
 
-    @staticmethod
-    def print_parameters(context):
+    def print_parameters(self):
+        context = self._context
         context_data = context.key_context_data()
         print("/ Encryption parameters:")
         print("| poly_modulus: " + str(context_data.parms().poly_modulus_degree()))
