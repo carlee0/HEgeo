@@ -55,8 +55,6 @@ class Participant(ABC):
                 fp.write(element)
         self.save_array(size_array, size_file)
         os.remove('tmp_file')
-        print("Array saved to file: %s\nCorresponding size array saved to file: %s"
-              % (binary_file, size_file))
 
     def load_cipher_array(self, size_file, binary_file):
         size_array = self.load_array(size_file)
