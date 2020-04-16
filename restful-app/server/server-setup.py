@@ -115,9 +115,13 @@ def upload_results():
 
 
 def save_file(file):
+    # TODO: mkdir if not exist
     print('---- Received file "%s"' % file.filename)
     file_name = secure_filename(file.filename)
-    file_path = os.path.join(app.config['UPLOAD_FOLDER'], file_name)
+    folder = app.config['UPLOAD_FOLDER']
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+    file_path = os.path.join(folder, file_name)
     file.save(file_path)
     print('---- Save file to: ', file_path)
     return file_path
