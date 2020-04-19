@@ -71,6 +71,21 @@ class Participant(ABC):
         os.remove('tmp_file')
         return arr
 
+    def save_c_arr(self, arr):
+        arr_s = []
+        for c in arr:
+            arr_s.append(c.saves())
+        return pickle.dumps(arr_s)
+
+    def load_c_arr(self, s):
+        s_arr = pickle.loads(s)
+        arr = []
+        for s in s_arr:
+            c = Ciphertext()
+            c.loads(self._context, s)
+            arr.append(c)
+        return arr
+
     @staticmethod
     def save_array(arr, file_path):
         """

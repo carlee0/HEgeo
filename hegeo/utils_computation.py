@@ -1,4 +1,6 @@
 import numpy as np
+import json
+from pathlib import Path
 
 
 def wn_point_in_poly(point, vertices):
@@ -39,3 +41,10 @@ def compute_wn(is_left_p, dy_p):
 
     wn = np.sum(clockwise) + np.sum(countercl)
     return wn
+
+
+def import_vertices(file_path):
+    assert Path(file_path).suffix != 'json', "file must be a .json file"
+    with open(file_path) as file:
+        data = json.load(file)[0]
+        return data.get('name'), data.get('path')
