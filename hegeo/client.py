@@ -20,7 +20,7 @@ class Client(Participant):
         self._secret_key = None
         self._encryptor = None
         self._decryptor = None
-        self.set_parms_from_dict()
+        self.set_parms_from_dict()  # instantiate with default parameters
 
     def get_parms(self):
         return self._parms
@@ -35,7 +35,7 @@ class Client(Participant):
 
     # noinspection PyArgumentList
     def set_parms_from_dict(self, **parms_dict):
-        default_parms_dict = {"poly": 2048, "coeff": 2048, "plain": (1 << 8)}
+        default_parms_dict = {"poly": 4096, "coeff": 4096, "plain": (1 << 8)}
         if parms_dict:
             for key, value in parms_dict.items():
                 assert key in parms_dict, "Accepted parameters are poly, coeff, plain, and print_parms"
