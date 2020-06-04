@@ -1,7 +1,6 @@
 import numpy as np
 import os
 import pickle
-from abc import ABC, abstractmethod
 from seal import EncryptionParameters, \
     SEALContext, \
     Ciphertext, \
@@ -10,17 +9,13 @@ from seal import EncryptionParameters, \
     scheme_type
 
 
-class Participant(ABC):
+class Participant(object):
 
     def __init__(self):
         self._parms = EncryptionParameters(scheme_type.BFV)
         self._context = None
         self._encoder = None
         self._evaluator = None
-
-    @abstractmethod
-    def get_parms(self):
-        pass
 
     # noinspection PyCallByClass,PyArgumentList
     def _set_parms(self, parms: EncryptionParameters, print_parms=False):
@@ -32,15 +27,36 @@ class Participant(ABC):
         if print_parms:
             self.print_parameters(self._context)
 
-    def load_parms(self, path: str, print_parms=False):
-        self._parms.load(path)
-        self._set_parms(self._parms, print_parms)
-        if print_parms:
-            self.print_parameters()
+    # def load_parms(self, path: str, print_parms=False):
+    #     self._parms.load(path)
+    #     self._set_parms(self._parms, print_parms)
+    #     if print_parms:
+    #         self.print_parameters()
 
-    @abstractmethod
-    def masking(self, arr):
-        pass
+    def save_c_arr(self, arr):
+        """
+        Save cipher array to string
+        :param arr: arr in ciphertext
+        :return: A string pickling the cipher array
+        """
+        arr_s = []
+        for c in arr:
+            arr_s.append(c.saves())
+        return pickle.dumps(arr_s)
+
+    def load_c_arr(self, s):
+        """
+        Load cipher array from string
+        :param s: A string pickling the cipher array
+        :return: Recovred cipher array
+        """
+        s_arr = pickle.loads(s)
+        arr = []
+        for s in s_arr:
+            c = Ciphertext()
+            c.loads(self._context, s)
+            arr.append(c)
+        return arr
 
     def save_cipher_array(self, arr, size_file, binary_file):
         assert isinstance(arr[0], object)  # must be Plaintext or Ciphertext arrays
@@ -69,21 +85,6 @@ class Participant(ABC):
                 c.load(self._context, 'tmp_file')
                 arr[i] = c
         os.remove('tmp_file')
-        return arr
-
-    def save_c_arr(self, arr):
-        arr_s = []
-        for c in arr:
-            arr_s.append(c.saves())
-        return pickle.dumps(arr_s)
-
-    def load_c_arr(self, s):
-        s_arr = pickle.loads(s)
-        arr = []
-        for s in s_arr:
-            c = Ciphertext()
-            c.loads(self._context, s)
-            arr.append(c)
         return arr
 
     @staticmethod
