@@ -26,7 +26,7 @@ class Client(Participant):
         return self._parms
 
     def set_parms(self, parms: EncryptionParameters, print_parms=False):
-        super()._set_parms(parms, print_parms)
+        super().set_parms(parms, print_parms)
         keygen = KeyGenerator(self._context)
         self.public_key = keygen.public_key()
         self.secret_key = keygen.secret_key()

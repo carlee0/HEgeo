@@ -18,7 +18,7 @@ class Participant(object):
         self._evaluator = None
 
     # noinspection PyCallByClass,PyArgumentList
-    def _set_parms(self, parms: EncryptionParameters, print_parms=False):
+    def set_parms(self, parms: EncryptionParameters, print_parms=False):
         self._parms = parms
         self._context = SEALContext.Create(self._parms)
         self._encoder = IntegerEncoder(self._context)
@@ -26,6 +26,9 @@ class Participant(object):
 
         if print_parms:
             self.print_parameters(self._context)
+
+    def get_parms(self):
+        return self._parms
 
     # def load_parms(self, path: str, print_parms=False):
     #     self._parms.load(path)

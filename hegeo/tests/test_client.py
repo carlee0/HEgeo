@@ -31,10 +31,8 @@ class ClientTest(unittest.TestCase):
         self.assertEqual(self.client.get_parms().plain_modulus().value(), 256)
         self.assertIsInstance(self.client.public_key, seal.PublicKey)
         self.assertIsInstance(self.client.secret_key, seal.SecretKey)
-        print(self.client.public_key)
 
     def test_enc_dec(self):
-        print(self.client.public_key)
         arr = np.array([3, 1, 0, -2, -4])
         arr_c = self.client.enc(arr)
         arr_p = self.client.dec(arr_c)
