@@ -108,8 +108,9 @@ def result():
     is_left_flag = pickle.loads(tasks[0]['data']['is_left_flag'])
     dy_flag = pickle.loads(tasks[0]['data']['dy_flag'])
 
-    is_left_dec = he_server.demasking(is_left_flag, is_left_dec)
-    dy_dec = he_server.demasking(dy_flag, dy_dec)
+    # Detection includes flag
+    # is_left_dec = he_server.demasking(is_left_flag, is_left_dec)
+    # dy_dec = he_server.demasking(dy_flag, dy_dec)
 
     res = he_server.detect_inclusion(is_left_dec, dy_dec, is_left_flag, dy_flag)
     return "Location verified" if res else "Location not verified. Service denied."
