@@ -29,7 +29,7 @@ $ cd restful-app/server
 $ python server-setup.py
 ```
 
-Send request to the server with two test coordinates
+Send request to the server with two test coordinates in a different terminal window
 ```shell
 $ cd restful-app/client
 $ python client-request.py 59.404811 17.948589 127.0.0.1 5000
