@@ -148,7 +148,13 @@ class Server(Participant):
         assert len(flag) == len(arr), "Flag and the cipher array must have the same length"
         return flag * arr
 
-    def detect_inclusion(self, is_left_p, dy_p):
+    def detect_inclusion(self, is_left_p, dy_p, is_left_flag=None, dy_flag=None):
+        if (type(is_left_flag) is np.ndarray) and (type(dy_flag) is np.ndarray):
+            assert len(is_left_flag) == len(dy_flag), "Length of the flag arrays must match"
+            assert len(is_left_p) == len(is_left_flag) or len(dy_p) == len(dy_flag), \
+                "Length of arrays must match"
+            is_left_p = is_left_p * is_left_flag
+            dy_p = dy_p * dy_flag
         wn = self.compute_wn(is_left_p, dy_p)
         return wn != 0
 
