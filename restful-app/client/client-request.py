@@ -32,7 +32,6 @@ def main(args):
     post_variable(url, coordinates_s, 'coordinates')
 
     is_left_string = get_variable(url, "is_left")
-    # print(is_left_string)
     dy_string = get_variable(url, "dy")
 
     is_left= he_client.load_c_arr(is_left_string)

@@ -76,6 +76,7 @@ class ServerTest(unittest.TestCase):
             # dy = self.server.demasking(flag_dy, dy)
             return self.server.detect_inclusion(is_left, dy, flag_is_left, flag_dy)
 
+
         client = Client()
         vertices = [[0, 0], [0, 20], [30, 20], [30, 0], [20, 0], [20, 10], [10, 10], [10, 0]]
 

@@ -51,6 +51,7 @@ def set_parms():
     data = request.get_data()
     he_server.get_parms().loads(data)
     he_server.set_parms(he_server.get_parms())
+
     # return redirect(url_for('parameters'))
     return "parms set"
 

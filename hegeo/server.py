@@ -155,6 +155,7 @@ class Server(Participant):
                 "Length of arrays must match"
             is_left_p = is_left_p * is_left_flag
             dy_p = dy_p * dy_flag
+
         wn = self.compute_wn(is_left_p, dy_p)
         return wn != 0
 
