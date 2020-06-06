@@ -16,8 +16,8 @@ def main(args):
     host = args[2]
     port = args[3]
     url = "http://" + host + ":" + str(port)
-    print("Sending request to: ")
-    print(url)
+    # print("Sending request to: ")
+    # print(url)
 
     # Set up
     he_client = hegeo.Client()
@@ -51,15 +51,15 @@ def main(args):
 def post_variable(url, data, data_type):
     url = os.path.join(url, data_type)
     r = requests.post(url, data=data)
-    print(url)
-    print(r.content.decode())
+    # print(url)
+    # print(r.content.decode())
 
 
 def get_variable(url, data_type):
     url = os.path.join(url, data_type)
     r = requests.get(url)
-    print(url)
-    print(r.status_code)
+    # print(url)
+    # print(r.status_code)
     return r.content
 
 
