@@ -68,10 +68,14 @@ def upload_coordinates():
     data = request.get_data()
     point = he_server.load_c_arr(data)
     is_left_arr, dy_arr = he_server.compute_intermediate(point)
+    is_left_flag, is_left_arr = he_server.masking(is_left_arr)
+    dy_flag, dy_arr = he_server.masking(dy_arr)
     is_left_string = he_server.save_c_arr(is_left_arr)
     dy_string = he_server.save_c_arr(dy_arr)
     tasks[0]['data']['is_left'] = is_left_string
     tasks[0]['data']['dy'] = dy_string
+    tasks[0]['data']['is_left_flag'] = pickle.dumps(is_left_flag)
+    tasks[0]['data']['dy_flag'] = pickle.dumps(dy_flag)
     return 'is_left and dy computed'
 
 
@@ -99,9 +103,15 @@ def dy_mask():
 
 @app.route('/result')
 def result():
-    is_left_mask_arr = pickle.loads(tasks[0]['data']['is_left_dec'])
-    dy_mask_arr = pickle.loads(tasks[0]['data']['dy_dec'])
-    res = he_server.detect_inclusion(is_left_mask_arr, dy_mask_arr)
+    is_left_dec = pickle.loads(tasks[0]['data']['is_left_dec'])
+    dy_dec = pickle.loads(tasks[0]['data']['dy_dec'])
+    is_left_flag = pickle.loads(tasks[0]['data']['is_left_flag'])
+    dy_flag = pickle.loads(tasks[0]['data']['dy_flag'])
+
+    is_left_dec = he_server.demasking(is_left_flag, is_left_dec)
+    dy_dec = he_server.demasking(dy_flag, dy_dec)
+
+    res = he_server.detect_inclusion(is_left_dec, dy_dec, is_left_flag, dy_flag)
     return "Location verified" if res else "Location not verified. Service denied."
 
 
