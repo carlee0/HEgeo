@@ -1,7 +1,6 @@
 # http://flask.pocoo.org/docs/patterns/fileuploads/
 from flask import Flask, request, redirect, url_for, send_from_directory, render_template
 import hegeo
-from geofencing import Fence
 import numpy as np
 import io
 from contextlib import redirect_stdout
@@ -21,8 +20,10 @@ tasks = [
             "coordinates": "",
             "is_left": "",
             "dy": "",
-            "is_left_mask": "",
-            "dy_mask": "",
+            "is_left_flag": "",
+            "dy_flag": "",
+            "is_left_dec": None,
+            "dy_dec": None,
             "result": "",
             "Done": False
         }
@@ -31,9 +32,8 @@ tasks = [
 
 
 he_server = hegeo.Server()
-fence = Fence()
-fence.set_vertices_from_file('data/sics.json')
-vertices = np.floor(np.array(fence.vertices) * 1e8).astype(int)
+he_server.load_fence('data/sics.json')
+vertices = np.floor(np.array(he_server.fence) * 1e8).astype(int)
 he_server.fence = vertices
 
 
@@ -50,8 +50,7 @@ def index():
 def set_parms():
     data = request.get_data()
     he_server.get_parms().loads(data)
-    # TODO: Need to change the flow of setting parms with string
-    he_server._set_parms(he_server.get_parms())
+    he_server.set_parms(he_server.get_parms())
     # return redirect(url_for('parameters'))
     return "parms set"
 
@@ -86,22 +85,22 @@ def dy():
     return tasks[0]['data']['dy']
 
 
-@app.route('/is_left_mask', methods=['POST'])
+@app.route('/is_left_dec', methods=['POST'])
 def is_left_mask():
-    tasks[0]['data']['is_left_mask'] = request.get_data()
-    return 'received is_left_mask'
+    tasks[0]['data']['is_left_dec'] = request.get_data()
+    return 'received is_left_dec'
 
 
-@app.route('/dy_mask', methods=['POST'])
+@app.route('/dy_dec', methods=['POST'])
 def dy_mask():
-    tasks[0]['data']['dy_mask'] = request.get_data()
-    return 'recieved dy_mask'
+    tasks[0]['data']['dy_dec'] = request.get_data()
+    return 'recieved dy_dec'
 
 
 @app.route('/result')
 def result():
-    is_left_mask_arr = pickle.loads(tasks[0]['data']['is_left_mask'])
-    dy_mask_arr = pickle.loads(tasks[0]['data']['dy_mask'])
+    is_left_mask_arr = pickle.loads(tasks[0]['data']['is_left_dec'])
+    dy_mask_arr = pickle.loads(tasks[0]['data']['dy_dec'])
     res = he_server.detect_inclusion(is_left_mask_arr, dy_mask_arr)
     return "Location verified" if res else "Location not verified. Service denied."
 
