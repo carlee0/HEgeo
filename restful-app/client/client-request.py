@@ -37,12 +37,12 @@ def main(args):
     is_left= he_client.load_c_arr(is_left_string)
     dy = he_client.load_c_arr(dy_string)
 
-    is_left_mask, dy_mask = decryt_mask(is_left, dy, he_client)
-    is_left_mask_s = pickle.dumps(is_left_mask)
-    dy_mask_s = pickle.dumps(dy_mask)
+    is_left_dec, dy_dec = decryt_mask(is_left, dy, he_client)
+    is_left_dec_s = pickle.dumps(is_left_dec)
+    dy_dec_s = pickle.dumps(dy_dec)
 
-    post_variable(url, is_left_mask_s, "is_left_mask")
-    post_variable(url, dy_mask_s, "dy_mask")
+    post_variable(url, is_left_dec_s, "is_left_dec")
+    post_variable(url, dy_dec_s, "dy_dec")
 
     res = get_variable(url, "result")
     print(res.decode())

@@ -70,11 +70,12 @@ class ServerTest(unittest.TestCase):
             is_left, dy = self.server.compute_intermediate(point_c)
             flag_is_left, is_left_m = self.server.masking(is_left)
             flag_dy, dy_m = self.server.masking(dy)
-            is_left_p = client.dec(is_left_m)
-            dy_p = client.dec(dy_m)
-            is_left = self.server.demasking(flag_is_left, is_left_p)
-            dy = self.server.demasking(flag_dy, dy_p)
-            return self.server.detect_inclusion(is_left, dy)
+            is_left = client.dec(is_left_m)
+            dy = client.dec(dy_m)
+            # is_left = self.server.demasking(flag_is_left, is_left)
+            # dy = self.server.demasking(flag_dy, dy)
+            return self.server.detect_inclusion(is_left, dy, flag_is_left, flag_dy)
+
 
         client = Client()
         vertices = [[0, 0], [0, 20], [30, 20], [30, 0], [20, 0], [20, 10], [10, 10], [10, 0]]
