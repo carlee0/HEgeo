@@ -11,7 +11,7 @@ setuptools.setup(
     description="Geo fencing using homomorphic encryption",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/CarmenLee111/HEgeo",
+    url="https://github.com/carlee0/HEgeo",
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
