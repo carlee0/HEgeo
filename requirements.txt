@@ -1,4 +1,4 @@
 flask
 requests
-numpy==1.18.2
+numpy==1.22.0
 seal==3.4.5
